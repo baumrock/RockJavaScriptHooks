@@ -100,3 +100,39 @@ ProcessWire.hookable("HelloWorld::greeting", {
   message: 'Hello World',
 });
 ```
+
+## Hook Priority
+
+Hooks are executed in the order they were added, but you can change this by using the `priority` parameter. The higher the priority, the later the hook will be executed (default priority is 100).
+
+```javascript
+$(document).ready(() => {
+  ProcessWire.addHookAfter(
+    "test",
+    (event) => {
+      event.return.foo = "baz";
+    },
+    30
+  );
+  ProcessWire.addHookAfter(
+    "test",
+    (event) => {
+      event.return.foo = "foo";
+    },
+    10
+  );
+  ProcessWire.addHookAfter(
+    "test",
+    (event) => {
+      event.return.foo = "bar";
+    },
+    20
+  );
+
+  let demo = ProcessWire.hookable("test", { foo: "xxx" });
+
+  console.log(demo);
+});
+```
+
+In this example the hook with priority 30 will be added first but will be executed last, so the output will be `{ foo: 'baz' }`.
