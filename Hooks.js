@@ -16,10 +16,11 @@
 
   // HookEvent class to create event objects with name and data
   class HookEvent {
-    constructor(name, data) {
+    constructor(name, data, context) {
       this.name = name;
       this.replace = false;
       this.return = data;
+      this.context = context;
     }
   }
 
@@ -40,16 +41,16 @@
   };
 
   // Function to execute hooks for a given event name and data
-  ProcessWire.hookable = function (name, data) {
+  ProcessWire.hookable = function (name, data, context) {
     let hooksBefore = ProcessWire.hooks.before[name] || [];
     let hooksAfter = ProcessWire.hooks.after[name] || [];
-    let event = new HookEvent(name, data);
+    let event = new HookEvent(name, data, context);
 
     // Execute before hooks
     hooksBefore.forEach((hook) => {
       // if previous hook has replace = true skip this one
       if (event.replace) return;
-      hook.fn(event);
+      hook.fn(event, context);
     });
 
     // If event has replace = true, return the new data
@@ -57,7 +58,7 @@
 
     // Execute after hooks
     hooksAfter.forEach((hook) => {
-      hook.fn(event);
+      hook.fn(event, context);
     });
 
     // Return the final event data
