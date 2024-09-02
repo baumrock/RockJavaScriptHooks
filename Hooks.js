@@ -65,3 +65,39 @@
     return event.return;
   };
 })();
+
+// class HookTest {
+//   constructor() {
+//     this.foo = function () {
+//       return "foo!";
+//     };
+//     this.___bar = function () {
+//       return "bar!";
+//     };
+//   }
+// }
+
+// const HookHandler = {
+//   get: function (target, prop, receiver) {
+//     // log the classname of target
+//     console.log(target.constructor.name);
+//     if (typeof target[prop] === "undefined") {
+//       if (typeof target[`___${prop}`] === "function") {
+//         return function (...args) {
+//           console.log("hook before");
+//           let result = target[`___${prop}`].apply(this, args);
+//           result = "hook after";
+//           return result;
+//         };
+//       }
+//     }
+//     return Reflect.get(target, prop, receiver);
+//   },
+// };
+
+// var hooktest = new HookTest();
+
+// var hooktestProxy = new Proxy(hooktest, HookHandler);
+
+// console.log(hooktestProxy.foo());
+// console.log(hooktestProxy.bar());
