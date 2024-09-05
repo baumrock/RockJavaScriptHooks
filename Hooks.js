@@ -178,28 +178,28 @@ const prio = ProcessWire.wire(new PrioDemo());
 ProcessWire.addHookAfter(
   "PrioDemo::greet",
   () => {
-    console.log("bar");
+    console.log("second");
   },
   20
 );
 ProcessWire.addHookAfter(
   "PrioDemo::greet",
   () => {
-    console.log("foo");
+    console.log("first");
   },
   10
 );
 ProcessWire.addHookAfter(
   "PrioDemo::greet",
   () => {
-    console.log("baz");
+    console.log("third");
   },
   30
 );
 
 // shows
-// foo
-// bar
-// baz
+// first
+// second
+// third
 // hello world
 console.log(prio.greet());
