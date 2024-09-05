@@ -69,9 +69,17 @@
 
   class HookEvent {
     constructor(args, data) {
-      this.arguments = args;
+      this.args = args;
       this.replace = false;
       this.return = data;
+    }
+
+    arguments(index, value) {
+      if (value === undefined) {
+        if (index === undefined) return this.args;
+        return this.args[index];
+      }
+      this.args[index] = value;
     }
   }
 
@@ -85,30 +93,29 @@
       return function (...args) {
         let replace = false;
         let result = null;
+        let hookArgs = args;
 
         // execute before hooks
         const beforeHooks =
           ProcessWire.hooks.before[`${target.constructor.name}::${prop}`] || [];
         beforeHooks.forEach((hook) => {
           if (replace) return;
-          const evt = new HookEvent(args, result);
+          const evt = new HookEvent(hookArgs, result);
           hook.fn(evt);
-          if (evt.replace) {
-            replace = true;
-            result = evt.return;
-          }
+          hookArgs = evt.args;
+          if (evt.replace) replace = true;
         });
 
+        result = target[`___${prop}`].apply(this, hookArgs);
         if (replace) return result;
-
-        result = target[`___${prop}`].apply(this, args);
 
         // execute after hooks
         const afterHooks =
           ProcessWire.hooks.after[`${target.constructor.name}::${prop}`] || [];
         afterHooks.forEach((hook) => {
-          const evt = new HookEvent(args, result);
+          const evt = new HookEvent(hookArgs, result);
           hook.fn(evt);
+          hookArgs = evt.args;
           result = evt.return;
         });
 
@@ -117,7 +124,82 @@
     },
   };
 
-  ProcessWire.proxy = function (object) {
+  ProcessWire.wire = function (object) {
     return new Proxy(object, HookHandler);
   };
 })();
+
+class HelloWorld {
+  ___greet(salut = "hello", what = "world") {
+    return `${salut} ${what}`;
+  }
+}
+
+const helloWorld = ProcessWire.wire(new HelloWorld());
+
+// shows hello world
+console.log(helloWorld.greet());
+
+// shows hi there
+console.log(helloWorld.greet("hi", "there"));
+
+// add BEFORE hook
+ProcessWire.addHookBefore("HelloWorld::greet", (event) => {
+  event.arguments(0, "hallo");
+  event.arguments(1, "welt");
+});
+
+// shows hallo welt
+console.log(helloWorld.greet());
+
+// shows hallo welt
+console.log(helloWorld.greet("servas", "oida"));
+
+// add AFTER hook
+ProcessWire.addHookAfter("HelloWorld::greet", (event) => {
+  // shows ['hallo', 'welt']
+  console.log(event.arguments());
+  event.return = "hi universe";
+});
+
+// shows hi universe
+console.log(helloWorld.greet());
+
+console.log("----------- hook priority -----------");
+
+class PrioDemo {
+  ___greet() {
+    return "hello world";
+  }
+}
+
+const prio = ProcessWire.wire(new PrioDemo());
+
+ProcessWire.addHookAfter(
+  "PrioDemo::greet",
+  () => {
+    console.log("bar");
+  },
+  20
+);
+ProcessWire.addHookAfter(
+  "PrioDemo::greet",
+  () => {
+    console.log("foo");
+  },
+  10
+);
+ProcessWire.addHookAfter(
+  "PrioDemo::greet",
+  () => {
+    console.log("baz");
+  },
+  30
+);
+
+// shows
+// foo
+// bar
+// baz
+// hello world
+console.log(prio.greet());
