@@ -15,7 +15,7 @@
   }
 
   // HookEvent class to create event objects with name and data
-  class HookEvent {
+  class HookEventOld {
     constructor(name, data, context) {
       this.name = name;
       this.replace = false;
@@ -44,7 +44,7 @@
   ProcessWire.hookable = function (name, data, context) {
     let hooksBefore = ProcessWire.hooks.before[name] || [];
     let hooksAfter = ProcessWire.hooks.after[name] || [];
-    let event = new HookEvent(name, data, context);
+    let event = new HookEventOld(name, data, context);
 
     // Execute before hooks
     hooksBefore.forEach((hook) => {
@@ -64,36 +64,63 @@
     // Return the final event data
     return event.return;
   };
+
+  /** ##### new version ##### */
+
+  class HookEvent {
+    constructor(args, data) {
+      this.arguments = args;
+      this.replace = false;
+      this.return = data;
+    }
+  }
+
+  const HookHandler = {
+    get: function (target, prop) {
+      // if prop starts with ___ we return the original value
+      if (prop.startsWith("___")) return target[prop];
+
+      // if prop does not start with ___ we return a function that executes
+      // hooks and the original method
+      return function (...args) {
+        let replace = false;
+        let result = null;
+
+        // execute before hooks
+        const beforeHooks =
+          ProcessWire.hooks.before[`${target.constructor.name}::${prop}`] || [];
+        beforeHooks.forEach((hook) => {
+          if (replace) return;
+          const evt = new HookEvent(args, result);
+          hook.fn(evt);
+          if (evt.replace) {
+            replace = true;
+            result = evt.return;
+          }
+        });
+
+        if (replace) return result;
+
+        result = target[`___${prop}`].apply(this, args);
+
+        // execute after hooks
+        const afterHooks =
+          ProcessWire.hooks.after[`${target.constructor.name}::${prop}`] || [];
+        afterHooks.forEach((hook) => {
+          const evt = new HookEvent(args, result);
+          hook.fn(evt);
+          result = evt.return;
+        });
+
+        return result;
+      };
+    },
+  };
+
+  ProcessWire.proxy = function (object) {
+    return new Proxy(object, HookHandler);
+  };
 })();
-
-// class HookTest {
-//   constructor() {
-//     this.foo = function () {
-//       return "foo!";
-//     };
-//     this.___bar = function () {
-//       return "bar!";
-//     };
-//   }
-// }
-
-// const HookHandler = {
-//   get: function (target, prop, receiver) {
-//     // log the classname of target
-//     console.log(target.constructor.name);
-//     if (typeof target[prop] === "undefined") {
-//       if (typeof target[`___${prop}`] === "function") {
-//         return function (...args) {
-//           console.log("hook before");
-//           let result = target[`___${prop}`].apply(this, args);
-//           result = "hook after";
-//           return result;
-//         };
-//       }
-//     }
-//     return Reflect.get(target, prop, receiver);
-//   },
-// };
 
 // var hooktest = new HookTest();
 
