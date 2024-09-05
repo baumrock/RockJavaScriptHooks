@@ -121,28 +121,3 @@
     return new Proxy(object, HookHandler);
   };
 })();
-
-// var hooktest = new HookTest();
-
-// var hooktestProxy = new Proxy(hooktest, HookHandler);
-
-// console.log(hooktestProxy.foo());
-// console.log(hooktestProxy.bar());
-
-// ProcessWire.magic(
-//   {
-//     foo: "foo world!",
-//     ___hello: () => {
-//       return "hello world!";
-//     },
-//   },
-//   "HelloWorld"
-// );
-
-// ProcessWire.addHookAfter("HelloWorld::hello", (e) => {
-//   e.return = "hello universe";
-// });
-
-// ProcessWire.addHookAfter("HelloWorld::foo", (e) => {
-//   e.return = "foo universe!";
-// });
