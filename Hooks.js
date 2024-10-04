@@ -88,6 +88,9 @@
       // if prop starts with ___ we return the original value
       if (prop.startsWith("___")) return target[prop];
 
+      // if ___prop is not defined we return the original value
+      if (typeof target[`___${prop}`] === "undefined") return target[prop];
+
       // if prop does not start with ___ we return a function that executes
       // hooks and the original method
       return function (...args) {
