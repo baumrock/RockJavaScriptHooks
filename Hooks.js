@@ -8,6 +8,8 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
     before: {},
   };
 
+  // HookEvent class to use in hooks
+  // eg event.arguments() or event.return
   class HookEvent {
     constructor(args, data) {
       this.args = args;
@@ -24,6 +26,9 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
     }
   }
 
+  // HookHandler is a Proxy that intercepts every method call
+  // and delegates it to the corresponding hookable method, if it
+  // exists. For example calling .foo() will delegate to ___foo()
   const HookHandler = {
     get: function (target, prop) {
       // if prop starts with ___ we return the original value
@@ -68,6 +73,8 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
     },
   };
 
+  // wire() method to apply HookHandler to an object
+  // this is all we need to make any object hookable :)
   ProcessWire.wire = function (object) {
     return new Proxy(object, HookHandler);
   };
