@@ -1,4 +1,6 @@
-# RockJavaScriptHooks
+# RockJavaScriptHooks (EXPERIMENTAL)
+
+# !!! PLEASE ONLY USE FOR TESTING - API CHANGES ARE ALREADY ON THE DEV BRANCH AND MORE WILL COME !!!
 
 ## Overview
 
