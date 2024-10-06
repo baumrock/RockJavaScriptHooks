@@ -1,6 +1,8 @@
 # RockJavaScriptHooks
 
-This module brings the power of Hooks to JavaScript! The syntax for adding hooks is the same as in PHP, which will make it feel very familiar to everybody who has worked with ProcessWire before:
+This module brings the power of Hooks to JavaScript! The syntax for adding hooks is the same as in PHP, which will make it feel very familiar to everybody who has worked with ProcessWire before.
+
+## Quickstart Example
 
 ```js
 class HelloWorld {
@@ -25,7 +27,11 @@ console.log(hello.greet());
 
 ### Backend
 
-In the ProcessWire backend, hooks will automatically be added to the `ProcessWire` JavaScript object. The necessary JavaScript file will automatically be loaded.
+In the ProcessWire backend, hook features will automatically be added to the `ProcessWire` JavaScript object. The necessary JavaScript file will automatically be loaded.
+
+Additionally the module will load the file `/site/templates/admin.js` that you can use to add hooks to the ProcessWire backend.
+
+Try it out and copy the example above into your `admin.js` file!
 
 ### Frontend
 
@@ -37,35 +43,40 @@ Should you need the hook functionality on the frontend of your site (because hoo
 
 ## Usage
 
-Consider the following example:
+### Plain Objects
+
+At the very least you can provide a plain object to the `ProcessWire.wire()` method to make it hookable. The only thing to mention is that as plain objects have no classname, you need to specify a unique name for your hookable methods:
 
 ```js
-// define class
+const demo = ProcessWire.wire({
+  ___greet() {
+    return "hello world";
+  }
+}, "HelloWorld");
+```
+
+In this example, we could hook before or after the `HelloWorld::greet` method:
+
+```js
+ProcessWire.addHookAfter("HelloWorld::greet", (event) => {
+  // replace hello world with hello universe
+  event.return = "hello universe";
+});
+
+// outputs "hello universe"
+console.log(demo.greet());
+```
+
+### Classes
+
+When using classes, you don't even need to specify a name as it will be detected automatically:
+
+```js
 class HelloWorld {
-  greet() {
+  ___greet() {
     return "hello world";
   }
 }
-
-// create new instance
-const hello = new HelloWorld();
-
-// outputs "hello world"
-console.log(hello.greet());
-```
-
-Once the Hooks.js file is loaded, you can turn any JavaScript class into a hookable class like this:
-
-```js
-// create new instance
-const notHookable = new HelloWorld();
-
-// wire it, so we can use hooks
-const hookable = ProcessWire.wire(notHookable);
-
-// attach a hook
-ProcessWire.addHookAfter('HelloWorld::greet')
-
-// outputs "hello universe"
-console.log(hookable.greet());
+const demo = ProcessWire.wire(new HelloWorld());
+// rest is the same as with plain objects
 ```
