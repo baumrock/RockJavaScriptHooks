@@ -23,6 +23,37 @@ ProcessWire.addHookAfter("HelloWorld::greet", (event) => {
 console.log(hello.greet());
 ```
 
+## WHY? (+ Real World Example)
+
+You might ask yourself why you would want to use hooks in JavaScript when you can just use event listeners. Well, hooks have a few advantages:
+
+1. They are usually easier to read and understand (especially when you are familiar with PHP hooks).
+2. They are easier to add for the developer (just prefix any method with `___`).
+3. They are more powerful and flexible.
+
+Take this real life example from the RockCommerce module, where we show an alert when the user has selected too many product variation options:
+
+```js
+handleOptionClick(el) {
+  if(this.maxOptionsReached) this.maxOptionsAlert();
+  else this.selectOption(el);
+}
+maxOptionsAlert() {
+  alert("Maximum number of selectable options reached");
+}
+```
+
+Now what if you wanted to make that ugly alert() customisable for the developer developing the webshop? Using event listeners this would be quite hard to do. Hooks make this easy, just rename `maxOptionsAlert` to `___maxOptionsAlert` and now the developer can override what's happening in that method with a BEFORE hook:
+
+```js
+ProcessWire.addHookBefore("RcVariationOption::maxOptionsAlert", (event) => {
+  // show UIkit modal alert instead of plain alert
+  UIkit.modal.alert("Maximale Anzahl an auswählbaren Optionen erreicht");
+  // stop execution of the original method (do not show the alert again)
+  event.replace = true;
+});
+```
+
 ## Loading the JS file
 
 ### Backend
