@@ -127,6 +127,12 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
     else return wireProxy(object, name);
   }
 
+  // wire object without using proxies
+  // This is for situations where proxies might interfere with other libraries
+  // for example when having an alpine component that is itself a proxy.
+  // When using this method we simply look for methods with ___ prefix and
+  // add the corresponding non-prefixed methods to the object that will take
+  // care of executing before and after hooks when called.
   function wireNoProxy(object, name) {
     // loop all properties of the object
     // and add corresponding methods instead of methods with ___ prefix
@@ -170,6 +176,7 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
       };
     }
 
+    // create the new object and return it
     return Object.create(Object.getPrototypeOf(object), props);
   }
 
@@ -226,6 +233,8 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
     },
   };
 
+  // wire object using proxies
+  // very simple, as the HookHandler does all the work
   function wireProxy(object, name) {
     return new Proxy(
       {
