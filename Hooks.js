@@ -65,19 +65,10 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
     }
   }
 
-  // Hook class to create hook objects with name, function, and priority
-  class Hook {
-    constructor(name, fn, priority = 100) {
-      this.name = name;
-      this.fn = fn;
-      this.priority = priority;
-    }
-  }
-
   // addHookAfter
   function addHookAfter(name, fn, priority = 100) {
     const _hooks = hooks.after[name] || [];
-    _hooks.push(new Hook(name, fn, priority));
+    _hooks.push({ name, fn, priority });
     _hooks.sort((a, b) => a.priority - b.priority);
     hooks.after[name] = _hooks;
   }
@@ -85,7 +76,7 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
   // addHookBefore
   function addHookBefore(name, fn, priority = 100) {
     const _hooks = hooks.before[name] || [];
-    _hooks.push(new Hook(name, fn, priority));
+    _hooks.push({ name, fn, priority });
     _hooks.sort((a, b) => a.priority - b.priority);
     hooks.before[name] = _hooks;
   }
