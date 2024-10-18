@@ -29,6 +29,8 @@ class RockJavaScriptHooks extends WireData implements Module
     if ($config->ajax) return;
     if ($config->external) return;
     wire()->config->scripts->add($config->urls($this) . 'Hooks.js');
-    wire()->config->scripts->add($config->urls->templates . 'admin.js');
+    if (is_file($config->paths->templates . 'admin.js')) {
+      wire()->config->scripts->add($config->urls->templates . 'admin.js');
+    }
   }
 }
