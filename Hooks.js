@@ -11,7 +11,8 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
   // HookEvent class to use in hooks
   // eg event.arguments() or event.return
   class HookEvent {
-    constructor(args, data) {
+    constructor(args, data, object) {
+      this.object = object;
       this.args = args;
       this.replace = false;
       this.return = data;
@@ -26,11 +27,42 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
     }
   }
 
+  // Hook class to create hook objects with name, function, and priority
+  class Hook {
+    constructor(name, fn, priority = 100) {
+      this.name = name;
+      this.fn = fn;
+      this.priority = priority;
+    }
+  }
+
+  // Function to add an after hook for a given event name
+  ProcessWire.addHookAfter = function (name, fn, priority = 100) {
+    let hooks = ProcessWire.hooks.after[name] || [];
+    hooks.push(new Hook(name, fn, priority));
+    hooks.sort((a, b) => a.priority - b.priority);
+    ProcessWire.hooks.after[name] = hooks;
+  };
+
+  // Function to add a before hook for a given event name
+  ProcessWire.addHookBefore = function (name, fn, priority = 100) {
+    let hooks = ProcessWire.hooks.before[name] || [];
+    hooks.push(new Hook(name, fn, priority, "before"));
+    hooks.sort((a, b) => a.priority - b.priority);
+    ProcessWire.hooks.before[name] = hooks;
+  };
+
   // HookHandler is a Proxy that intercepts every method call
   // and delegates it to the corresponding hookable method, if it
   // exists. For example calling .foo() will delegate to ___foo()
   const HookHandler = {
     get: function (target, prop) {
+      if (typeof prop !== "string") return target[prop];
+
+      // build hook selector
+      const selector = `${target.constructor.name}::${prop}`;
+      // console.log(selector);
+
       // if prop starts with ___ we return the original value
       if (prop.startsWith("___")) return target[prop];
 
@@ -45,8 +77,7 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
         let hookArgs = args;
 
         // execute before hooks
-        const beforeHooks =
-          ProcessWire.hooks.before[`${target.constructor.name}::${prop}`] || [];
+        const beforeHooks = ProcessWire.hooks.before[selector] || [];
         beforeHooks.forEach((hook) => {
           if (replace) return;
           const evt = new HookEvent(hookArgs, result);
@@ -59,8 +90,7 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
         if (replace) return result;
 
         // execute after hooks
-        const afterHooks =
-          ProcessWire.hooks.after[`${target.constructor.name}::${prop}`] || [];
+        const afterHooks = ProcessWire.hooks.after[selector] || [];
         afterHooks.forEach((hook) => {
           const evt = new HookEvent(hookArgs, result);
           hook.fn(evt);
