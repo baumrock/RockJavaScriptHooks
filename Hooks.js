@@ -56,18 +56,21 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
   // and delegates it to the corresponding hookable method, if it
   // exists. For example calling .foo() will delegate to ___foo()
   const HookHandler = {
-    get: function (target, prop) {
-      if (typeof prop !== "string") return target[prop];
+    get: function (data, prop) {
+      const object = data.object;
+      if (typeof prop !== "string") return object[prop];
 
       // build hook selector
-      const selector = `${target.constructor.name}::${prop}`;
+      let hookObjectName = data.name;
+      if (!hookObjectName) hookObjectName = object.constructor.name;
+      const selector = `${hookObjectName}::${prop}`;
       // console.log(selector);
 
       // if prop starts with ___ we return the original value
-      if (prop.startsWith("___")) return target[prop];
+      if (prop.startsWith("___")) return object[prop];
 
       // if ___prop is not defined we return the original value
-      if (typeof target[`___${prop}`] === "undefined") return target[prop];
+      if (typeof object[`___${prop}`] === "undefined") return object[prop];
 
       // if prop does not start with ___ we return a function that executes
       // hooks and the original method
@@ -86,7 +89,7 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
           if (evt.replace) replace = true;
         });
 
-        result = target[`___${prop}`].apply(this, hookArgs);
+        result = object[`___${prop}`].apply(this, hookArgs);
         if (replace) return result;
 
         // execute after hooks
@@ -103,9 +106,89 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
     },
   };
 
+  ProcessWire.wireNoProxy = function (comp, name) {
+    // get all defined of provided alpine component
+    let props = Object.getOwnPropertyDescriptors(comp);
+
+    // loop over all props and check for hookable methods
+    for (let key in props) {
+      if (!key.startsWith("___")) continue;
+
+      const val = props[key].value;
+      if (!typeof val === "function") continue;
+
+      // add new method without the ___ prefix
+      let newKey = key.slice(3);
+
+      // define the new method dynamically
+      props[newKey] = {
+        get() {
+          return function (...args) {
+            // build hook name
+            const hookName = `${name}::${newKey}`;
+
+            // build hookEvent
+            const hookEvent = {
+              object: this,
+              replace: false,
+              return: val,
+              arguments: args,
+            };
+
+            // add hook to ProcessWire to make it hookable
+            // this method call will return the initial value
+            // of the non-hooked method, but before it does that
+            // all beforeHooks are executed and after it does that
+            // all afterHooks are executed.
+            return ProcessWire.hook(hookName, hookEvent);
+          };
+        },
+      };
+    }
+
+    // create the new object and return it
+    // this is using the following alpinejs workaround for nextTick issue:
+    // https://github.com/alpinejs/alpine/discussions/1940#discussioncomment-6586765
+    return Object.create(Object.getPrototypeOf(comp), props);
+  };
+
+  ProcessWire.hook = function (name, hookEvent) {
+    console.log("--- attach hook " + name + " ---");
+    console.log("hookEvent", hookEvent);
+    console.log("rctype", hookEvent.object.$rctype);
+    console.log("--- end hook ---");
+    return hookEvent.return;
+  };
+
   // wire() method to apply HookHandler to an object
   // this is all we need to make any object hookable :)
-  ProcessWire.wire = function (object) {
-    return new Proxy(object, HookHandler);
+  ProcessWire.wire = function (object, name = null, noProxy = false) {
+    // if no name is provided check if we can get it from the object
+    if (!name) name = object.constructor.name;
+
+    // if the object is not a class it will have name "Object"
+    // in that case we throw an error so that the developer provides a name
+    // that we can use for the hook identifier like "Foo::hello" or otherwise
+    // all generic objects would have the same hook name "Object::hello"
+    if (name === "Object") {
+      throw new Error(
+        "Please provide a name in ProcessWire.wire(object, name)"
+      );
+    }
+
+    // If noProxy is set we use a different technique to add hooks to our
+    // object. This is necessary for alpinejs, because the proxy would mess up
+    // with alpine's internal proxy mechanism.
+    if (noProxy) return this.wireNoProxy(object, name);
+
+    // otherwise we create a proxy object that uses the HookHandler
+    // to intercept method calls and execute hooks
+    return new Proxy(
+      {
+        object: object,
+        name: name,
+      },
+      HookHandler
+    );
   };
 })();
