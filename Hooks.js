@@ -229,8 +229,6 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
 
         return hookEvent.return;
       };
-
-      // ... existing code ...
     },
   };
 
