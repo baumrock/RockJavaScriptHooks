@@ -29,17 +29,47 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
   class HookEvent {
     constructor(args, data, object) {
       this.object = object;
-      this.args = args;
+      this._arguments = args;
       this.replace = false;
       this.return = data;
     }
 
-    arguments(index, value) {
-      if (value === undefined) {
-        if (index === undefined) return this.args;
-        return this.args[index];
-      }
-      this.args[index] = value;
+    // dynamic arguments getter
+    // this is to access hook arguments either via event.arguments
+    // or event.arguments(0) or event.arguments(1) etc
+    get arguments() {
+      const self = this;
+      return new Proxy(
+        function () {
+          // requested as property, eg event.arguments
+          // return the arguments array
+          if (arguments.length === 0) return self._arguments;
+
+          // requested as method, eg event.arguments(0)
+          // return the requested array element
+          if (arguments.length === 1) return self._arguments[arguments[0]];
+
+          // requested as method to set a value, eg event.arguments(0, "foo")
+          // set the requested array element
+          if (arguments.length === 2)
+            self._arguments[arguments[0]] = arguments[1];
+        },
+        {
+          get(target, prop) {
+            if (prop === "length") return self._arguments.length;
+            const index = parseInt(prop, 10);
+            return isNaN(index) ? undefined : self._arguments[index];
+          },
+          set(target, prop, value) {
+            const index = parseInt(prop, 10);
+            if (!isNaN(index)) {
+              self._arguments[index] = value;
+              return true;
+            }
+            return false;
+          },
+        }
+      );
     }
   }
 
