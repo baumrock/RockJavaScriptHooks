@@ -9,20 +9,6 @@ namespace ProcessWire;
  */
 class RockJavaScriptHooks extends WireData implements Module
 {
-
-  public static function getModuleInfo()
-  {
-    return [
-      'title' => 'RockJavaScriptHooks',
-      'version' => '0.0.1',
-      'summary' => 'Adds hooks for ProcessWire JavaScript',
-      // changing this will break it
-      'autoload' => 'template=admin',
-      'singular' => true,
-      'icon' => 'anchor',
-    ];
-  }
-
   public function init()
   {
     $config = wire()->config;
