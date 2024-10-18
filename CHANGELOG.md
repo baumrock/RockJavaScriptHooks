@@ -1,4 +1,15 @@
-## 0.1.0 (2024-10-18)
+## [1.0.0](https://github.com/baumrock/RockJavaScriptHooks/compare/v0.1.0...v1.0.0) (2024-10-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump version
+
+### Features
+
+* bump version ([60d2e6d](https://github.com/baumrock/RockJavaScriptHooks/commit/60d2e6d422c2fd1dc0d49274ebcd57b587afa1bb))
+
+## [0.1.0](https://github.com/baumrock/RockJavaScriptHooks/compare/d30280b39caf0742d302af4d783a2ecab3d4df51...v0.1.0) (2024-10-18)
 
 
 ### Features
