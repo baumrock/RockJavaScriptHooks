@@ -1,4 +1,5 @@
 // create global ProcessWire object if it doesn't exist
+// This makes it possible to use ProcessWire hooks in the frontend (standalone)
 if (typeof ProcessWire == "undefined") ProcessWire = {};
 
 // function for custom scope to not pollute global namespace
