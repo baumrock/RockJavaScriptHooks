@@ -2,13 +2,27 @@
 if (typeof ProcessWire == "undefined") ProcessWire = {};
 
 (() => {
-  // Initialize hooks object to store before and after hooks
-  ProcessWire.hooks = {
-    after: {},
-    before: {},
-  };
+  // create class for processwire hooks
+  class ProcessWireHooks {
+    static hooks = {
+      after: {},
+      before: {},
+    };
 
-  class ProcessWireHooks {}
+    static executeHooks(type, hookName, hookEvent) {
+      const hooks = ProcessWireHooks.hooks[type][hookName] || [];
+      for (let hook of hooks) {
+        try {
+          hook.fn(hookEvent);
+          if (hookEvent.replace && type === "before") break;
+        } catch (error) {
+          console.error(`Error in ${type} hook for ${hookName}:`, error);
+          console.log("Hook:", hook);
+          console.log("HookEvent:", hookEvent);
+        }
+      }
+    }
+  }
 
   // HookEvent class to use in hooks
   // eg event.arguments() or event.return
@@ -40,33 +54,18 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
 
   // Function to add an after hook for a given event name
   ProcessWire.addHookAfter = function (name, fn, priority = 100) {
-    let hooks = ProcessWire.hooks.after[name] || [];
+    let hooks = ProcessWireHooks.hooks.after[name] || [];
     hooks.push(new Hook(name, fn, priority));
     hooks.sort((a, b) => a.priority - b.priority);
-    ProcessWire.hooks.after[name] = hooks;
+    ProcessWireHooks.hooks.after[name] = hooks;
   };
 
   // Function to add a before hook for a given event name
   ProcessWire.addHookBefore = function (name, fn, priority = 100) {
-    let hooks = ProcessWire.hooks.before[name] || [];
+    let hooks = ProcessWireHooks.hooks.before[name] || [];
     hooks.push(new Hook(name, fn, priority, "before"));
     hooks.sort((a, b) => a.priority - b.priority);
-    ProcessWire.hooks.before[name] = hooks;
-  };
-
-  // Add this helper function to execute hooks
-  ProcessWire.executeHooks = function (type, hookName, hookEvent) {
-    const hooks = ProcessWire.hooks[type][hookName] || [];
-    for (let hook of hooks) {
-      try {
-        hook.fn(hookEvent);
-        if (hookEvent.replace && type === "before") break;
-      } catch (error) {
-        console.error(`Error in ${type} hook for ${hookName}:`, error);
-        console.log("Hook:", hook);
-        console.log("HookEvent:", hookEvent);
-      }
-    }
+    ProcessWireHooks.hooks.before[name] = hooks;
   };
 
   // wire() method to apply HookHandler to an object
@@ -101,7 +100,7 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
           const hookEvent = new HookEvent(args, undefined, this);
 
           // Execute before hooks
-          ProcessWire.executeHooks("before", hookName, hookEvent);
+          ProcessWireHooks.executeHooks("before", hookName, hookEvent);
 
           // if event.replace is true we do not call the original method
           if (hookEvent.replace) return hookEvent.return;
@@ -110,7 +109,7 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
           hookEvent.return = originalMethod.apply(this, hookEvent.arguments());
 
           // Execute after hooks
-          ProcessWire.executeHooks("after", hookName, hookEvent);
+          ProcessWireHooks.executeHooks("after", hookName, hookEvent);
 
           return hookEvent.return;
         },
