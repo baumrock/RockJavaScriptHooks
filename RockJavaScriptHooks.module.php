@@ -16,6 +16,7 @@ class RockJavaScriptHooks extends WireData implements Module
       'title' => 'RockJavaScriptHooks',
       'version' => '0.0.1',
       'summary' => 'Adds hooks for ProcessWire JavaScript',
+      // changing this will break it
       'autoload' => 'template=admin',
       'singular' => true,
       'icon' => 'anchor',
@@ -24,7 +25,10 @@ class RockJavaScriptHooks extends WireData implements Module
 
   public function init()
   {
-    $url = $this->wire->config->urls($this);
-    $this->wire->config->scripts->add($url . 'Hooks.js');
+    $config = wire()->config;
+    if ($config->ajax) return;
+    if ($config->external) return;
+    wire()->config->scripts->add($config->urls($this) . 'Hooks.js');
+    wire()->config->scripts->add($config->urls->templates . 'admin.js');
   }
 }

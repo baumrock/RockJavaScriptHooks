@@ -106,7 +106,7 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
 
   // wire() method to apply HookHandler to an object
   // this is all we need to make any object hookable :)
-  function wire(object, name = null) {
+  function wire(object, name = null, noProxy = false) {
     // if no name is provided check if we can get it from the object
     if (!name) name = object.constructor.name;
 
@@ -118,6 +118,16 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
       throw new Error("Please provide a name: ProcessWire.wire(object, name)");
     }
 
+    // for generic objects we always use the non-proxy version
+    if (object.constructor.name === "Object") noProxy = true;
+
+    // for classes we use the proxy
+    // for everything else we use the non-proxy version (alpine js, plain objects)
+    if (noProxy) return wireNoProxy(object, name);
+    else return wireProxy(object, name);
+  }
+
+  function wireNoProxy(object, name) {
     // loop all properties of the object
     // and add corresponding methods instead of methods with ___ prefix
     let props = Object.getOwnPropertyDescriptors(object);
@@ -161,5 +171,68 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
     }
 
     return Object.create(Object.getPrototypeOf(object), props);
+  }
+
+  // add hooks via proxies
+
+  // HookHandler is a Proxy that intercepts every method call
+  // and delegates it to the corresponding hookable method, if it
+  // exists. For example calling .foo() will delegate to ___foo()
+  const HookHandler = {
+    get: function (data, prop) {
+      const object = data.object;
+      if (typeof prop !== "string") return object[prop];
+
+      // build hook selector
+      let hookObjectName = data.name;
+      if (!hookObjectName) hookObjectName = object.constructor.name;
+      const selector = `${hookObjectName}::${prop}`;
+      // console.log(selector);
+
+      // if prop starts with ___ we return the original value
+      if (prop.startsWith("___")) return object[prop];
+
+      // if ___prop is not defined we return the original value
+      if (typeof object[`___${prop}`] === "undefined") return object[prop];
+
+      // if prop does not start with ___ we return a function that executes
+      // hooks and the original method
+      return function (...args) {
+        // Create hookEvent object using HookEvent class
+        const hookEvent = new HookEvent({
+          arguments: args,
+          object: this,
+        });
+
+        // Execute before hooks
+        executeHooks("before", selector, hookEvent);
+
+        // if event.replace is true we do not call the original method
+        if (hookEvent.replace) return hookEvent.return;
+
+        // Call the original method
+        hookEvent.return = object[`___${prop}`].apply(
+          this,
+          hookEvent.arguments()
+        );
+
+        // Execute after hooks
+        executeHooks("after", selector, hookEvent);
+
+        return hookEvent.return;
+      };
+
+      // ... existing code ...
+    },
+  };
+
+  function wireProxy(object, name) {
+    return new Proxy(
+      {
+        object: object,
+        name: name,
+      },
+      HookHandler
+    );
   }
 })();
