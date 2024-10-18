@@ -48,7 +48,7 @@ Should you need the hook functionality on the frontend of your site (because hoo
 At the very least you can provide a plain object to the `ProcessWire.wire()` method to make it hookable. The only thing to mention is that as plain objects have no classname, you need to specify a unique name for your hookable methods:
 
 ```js
-const demo = ProcessWire.wire({
+const hello = ProcessWire.wire({
   ___greet() {
     return "hello world";
   }
@@ -64,7 +64,7 @@ ProcessWire.addHookAfter("HelloWorld::greet", (event) => {
 });
 
 // outputs "hello universe"
-console.log(demo.greet());
+console.log(hello.greet());
 ```
 
 ### Classes
@@ -77,6 +77,6 @@ class HelloWorld {
     return "hello world";
   }
 }
-const demo = ProcessWire.wire(new HelloWorld());
+const hello = ProcessWire.wire(new HelloWorld());
 // rest is the same as with plain objects
 ```
