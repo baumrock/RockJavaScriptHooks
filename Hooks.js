@@ -108,14 +108,19 @@ if (typeof ProcessWire == "undefined") ProcessWire = {};
   // wire() method to apply HookHandler to an object
   // this is all we need to make any object hookable :)
   function wire(object, name = null, noProxy = false) {
-    // if no name is provided check if we can get it from the object
-    if (!name) name = object.constructor.name;
+    // check if object is an instance of a class
+    // if it is, throw an error
+    if (object.constructor.name !== "Object") {
+      throw new Error(
+        "ProcessWire.wire() does not support classes. Please use plain objects instead."
+      );
+    }
 
     // if the object is not a class it will have name "Object"
     // in that case we throw an error so that the developer provides a name
     // that we can use for the hook identifier like "Foo::hello" or otherwise
     // all generic objects would have the same hook name "Object::hello"
-    if (name === "Object") {
+    if (!name) {
       throw new Error("Please provide a name: ProcessWire.wire(object, name)");
     }
 
