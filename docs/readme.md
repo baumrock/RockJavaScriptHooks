@@ -5,14 +5,11 @@ This module brings the power of Hooks to JavaScript! The syntax for adding hooks
 ## Quickstart Example
 
 ```js
-class HelloWorld {
+const hello = ProcessWire.wire({
   ___greet() {
     return "hello world";
   }
-}
-
-// create new instance
-const hello = ProcessWire.wire(new HelloWorld());
+}, "HelloWorld");
 
 // attach a hook
 ProcessWire.addHookAfter("HelloWorld::greet", (event) => {
@@ -23,7 +20,7 @@ ProcessWire.addHookAfter("HelloWorld::greet", (event) => {
 console.log(hello.greet());
 ```
 
-## WHY? (+ Real World Example)
+## WHY + Example
 
 You might ask yourself why you would want to use hooks in JavaScript when you can just use event listeners. Well, hooks have a few advantages:
 
@@ -31,24 +28,27 @@ You might ask yourself why you would want to use hooks in JavaScript when you ca
 2. They are easier to add for the developer (just prefix any method with `___`).
 3. They are more powerful and flexible.
 
-Take this real life example from the RockCommerce module, where we show an alert when the user has selected too many product variation options:
+Take this simple example:
 
 ```js
-handleOptionClick(el) {
-  if(this.maxOptionsReached) this.maxOptionsAlert();
-  else this.selectOption(el);
+const Product = {
+  addToCart(item) {
+    alert('Item has been added to cart: ' + item);
+  }
 }
-maxOptionsAlert() {
-  alert("Maximum number of selectable options reached");
-}
+Product.addToCart('Foo Product');
 ```
 
-Now what if you wanted to make that ugly alert() customisable for the developer developing the webshop? Using event listeners this would be quite hard to do. Hooks make this easy, just rename `maxOptionsAlert` to `___maxOptionsAlert` and now the developer can override what's happening in that method with a BEFORE hook:
+The Product object can easily be used to add products to the cart, great. But what if you want to make that configurable? What if someone wants to use your Product object but wants to show a UIkit alert instead of the plain JavaScript alert?
+
+How would you do that with event listeners? It would be possible, but not easy.
+
+Using hooks, you can easily achieve this, because we can not only listen to the event, but also modify or replace it using addHookBefore:
 
 ```js
-ProcessWire.addHookBefore("RcVariationOption::maxOptionsAlert", (event) => {
+ProcessWire.addHookBefore("Product::addToCart", (event) => {
   // show UIkit modal alert instead of plain alert
-  UIkit.modal.alert("Maximale Anzahl an auswählbaren Optionen erreicht");
+  UIkit.modal.alert("Item has been added to cart: " + event.arguments(0));
   // stop execution of the original method (do not show the alert again)
   event.replace = true;
 });
