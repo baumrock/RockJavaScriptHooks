@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/baumrock/RockJavaScriptHooks/compare/v1.0.0...v1.0.1) (2025-03-16)
+
+
+### Bug Fixes
+
+* throw error if class was provided ([891892d](https://github.com/baumrock/RockJavaScriptHooks/commit/891892da9ff2474ea6bc661ad37ae8d63d8bbead))
+
 ## [1.0.0](https://github.com/baumrock/RockJavaScriptHooks/compare/v0.1.0...v1.0.0) (2024-10-18)
 
 
